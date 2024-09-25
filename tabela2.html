@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página com Tabela e Exportação para PDF</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .row {
+            margin: 10px;
+        }
+        .button, .input-field {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .button.red-text {
+            color: #ff0000;
+        }
+        .input-field {
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .button-container button {
+            margin: 5px;
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        th, td {
+            border: 1px solid #333333;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #333333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <button id="colorButton" class="button">Clique para mudar a cor do texto</button>
+            <input type="text" id="dataField" class="input-field" placeholder="Conteúdo da primeira coluna">
+        </div>
+        <div class="row">
+            <input type="text" id="updateField" class="input-field" placeholder="Atualize o valor">
+        </div>
+        <div class="row button-container">
+            <button id="removeButton" class="button">Remover Linha</button>
+            <button id="registerButton" class="button">Registrar Valores</button>
+            <button id="exportPdfButton" class="button">Exportar para PDF</button>
+        </div>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Linhas da tabela serão adicionadas dinamicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Adicionar jsPDF e html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Mock data for Google Sheets
+        let data = {
+            'Item 1': 'Value 1',
+            'Item 2': 'Value 2',
+            'Item 3': 'Value 3'
+        };
+        let keys = Object.keys(data);
+        let currentIndex = 0;
+
+        function updateDataField() {
+            const dataField = document.getElementById('dataField');
+            if (keys.length > 0) {
+                dataField.value = keys[currentIndex];
+            } else {
+                dataField.value = '';
+            }
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = ''; // Clear existing rows
+            keys.forEach(key => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${key}</td><td>${data[key]}</td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.getElementById('colorButton').addEventListener('click', function() {
+            this.classList.toggle('red-text');
+        });
+
+        document.getElementById('registerButton').addEventListener('click', function() {
+            const updateField = document.getElementById('updateField');
+            if (updateField.value && keys.length > 0) {
+                data[keys[currentIndex]] = updateField.value;
+                currentIndex = (currentIndex + 1) % keys.length;
+                updateDataField();
+                updateField.value = '';
+                updateTable();
+            }
+        });
+
+        document.getElementById('removeButton').addEventListener('click', function() {
+            if (keys.length > 0) {
+                delete data[keys[currentIndex]];
+                keys = Object.keys(data);
+                currentIndex = (currentIndex >= keys.length) ? 0 : currentIndex;
+                updateDataField();
+                updateTable();
+            }
+        });
+
+        async function saveToGoogleSheets() {
+            // Your Google Sheets API code here to update the sheet
+            console.log('Salvando dados no Google Sheets:', data);
+            // Example: Fetch API or another method to send data to Google Sheets
+        }
+
+        document.getElementById('exportPdfButton').addEventListener('click', function() {
+            html2canvas(document.querySelector("#dataTable")).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', 10, 10);
+                pdf.save('tabela.pdf');
+            });
+        });
+
+        updateDataField();
+        updateTable();
+    </script>
+</body>
+</html>
